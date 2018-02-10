@@ -14,121 +14,49 @@ static const unsigned int BIT_PER_PIXEL = 32;
 /* Nombre minimal de millisecondes separant le rendu de deux images */
 static const Uint32 FRAMERATE_MILLISECONDS = 1000 / 60;
 
-typedef struct Point{
+/* Structures */
+typedef struct Point {
 	float x, y; // Position 2D du point
 	unsigned char r, g, b; // Couleur du point
 	struct Point* next; // Point suivant à dessiner
 } Point, *PointList;
 
-Point* allocPoint(float x, float y, unsigned char r, unsigned char g, unsigned char b) {
-	printf("In allocPoint\n");
-	Point* point;
-	point = malloc(sizeof(Point));
-	if (point == NULL)
-	{
-		exit(EXIT_FAILURE);
-	}
-	point->x = x;
-	point->y = y;
-	point->r = r;
-	point->g = g;
-	point->b = b;
-	point->next = NULL;
-	return point;
-}
+typedef struct Primitive {
+	GLenum primitiveType; //Type de primitive (GL_POINTS, GL_LINES, GL_TRIANGLES)
+	PointList points;	//Liste des points de la primitive
+	struct Primitive* next;	 //Primitive suivante
+} Primitive, *PrimitiveList;
 
-void addPointToList(Point* point, PointList* list) {
-	PointList tmp_list;
-	tmp_list = malloc(sizeof(PointList));
-	if (tmp_list) {
-		tmp_list = *list;
-	}
-	printf("In addPointToList\n");
-	printf("X du point : %f\n", point->x);
-	if (*list == NULL) {
-		*list = point;
-	} else {
-		while (tmp_list->next != NULL) {
-			tmp_list = tmp_list->next;
-		}
-		tmp_list->next = point;
-	}
-}
+/* Fonctions concernant les points */
+Point* allocPoint(float x, float y, unsigned char r, unsigned char g, unsigned char b);
+void addPointToList(Point* point, PointList* list);
+void drawPoints(PointList list);
+void deletePoints(PointList* list);
 
-void drawPoints(PointList list) {
-	while (list != NULL) {
-		glColor3ub(list->r, list->g, list->b);
-		glBegin(GL_POINTS);
-			glVertex2f(list->x, list->y);
-		glEnd();
-		list = list->next;
-	}
-}
+/* Fonctions concernant les primitive */
+Primitive* allocPrimitive(GLenum primitiveType);
+void addPrimitive(Primitive* primitive, PrimitiveList* list);
+void drawPrimitives(PrimitiveList list);
+void deletePrimitive(PrimitiveList* list);
 
-void deletePoints(PointList* list) { //Pas sûr
-	if (*list) {
-		while (list != NULL) {
-			PointList next = (*list)->next;
-			free(list);
-			*list = next;
-		}
-	}
-}
+void resize(); //Redimensionne le viewport et rafraichit le repère 
+void displayPalette(); //Affiche les couleurs de la palette
+void selectColor(int x, int *r, int *g, int *b); // Modifie la couleur actuelle en fonction du clic
 
-void resize() {
-	SDL_SetVideoMode(WINDOW_WIDTH, WINDOW_HEIGHT, BIT_PER_PIXEL, SDL_OPENGL | SDL_RESIZABLE);
-	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluOrtho2D(-1., 1., -1., 1.);
-}
-
-void displayPalette(){
-	int nb_colors, i;
-	float color_width;
-	nb_colors = 8;
-	color_width = 2 * WINDOW_WIDTH / (float)nb_colors * 100 / WINDOW_WIDTH / 100 ;
-
-	glBegin(GL_QUADS);
-		for(i = 0; i < nb_colors; ++i) {
-			glColor3ub((255 / nb_colors) * i, 0, 255);
-			glVertex2f(-1 + i * color_width, -1);
-			glVertex2f(-1 + (i + 1) * color_width, -1);
-			glVertex2f(-1 + (i + 1) * color_width, 1);
-			glVertex2f(-1 + i * color_width, 1);
-		}
-	glEnd();
-}
-
-void selectColor(int x, int *r, int *g, int *b){
-	int nb_colors, num_bande;
-	nb_colors = 8;
-
-	num_bande = x / (WINDOW_WIDTH / nb_colors);
-	printf("Clic Sur %d\n", num_bande);
-	*r = (255 / nb_colors) * num_bande;
-	*g = 0;
-	*b = 255;
-}
 
 int main(int argc, char** argv) {
-	int primitive, mode;
-	float x1 = 0,
-		y1 = 0, 
-		x2 = 0, 
-		y2 = 0, 
-		x3 = 0, 
-		y3 = 0;
-	int r, g, b;
-	PointList list;
+	int mode; //0: Mode dessin, 1: Mode palette
+	float x, y; // Coordonnées du curseur au clic
+	int r, g, b; // Valeurs rgb de la couleur courante
+	float point_size; //Largeur du point
 
-	list = NULL;
-	primitive = 0;
+	PrimitiveList primitives = NULL;
 	mode = 0;
-	r = 255;
-	g = 255;
-	b = 255;
+	r = g = b = 255; //Couleur blanche
+	x = y = 0;
+	point_size = 2.0f;
 
+	addPrimitive(allocPrimitive(GL_POINTS), &primitives);
 
 	/* Initialisation de la SDL */
 	if(-1 == SDL_Init(SDL_INIT_VIDEO)) {
@@ -136,17 +64,17 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 0);
-
-	/* Ouverture d'une fenÃªtre et crÃ©ation d'un contexte OpenGL */
-	if(NULL == SDL_SetVideoMode(WINDOW_WIDTH, WINDOW_HEIGHT, BIT_PER_PIXEL, SDL_OPENGL | SDL_RESIZABLE)) {
+	/* Ouverture d'une fenêtre et création d'un contexte OpenGL */
+	if(NULL == SDL_SetVideoMode(WINDOW_WIDTH, WINDOW_HEIGHT, BIT_PER_PIXEL, SDL_OPENGL | SDL_RESIZABLE | SDL_GL_DOUBLEBUFFER)) {
 		fprintf(stderr, "Impossible d'ouvrir la fenetre. Fin du programme.\n");
 		return EXIT_FAILURE;
 	}
 
 	resize();
 
-	glColor3ub(255, 255, 255);
+	glColor3ub(r, g, b); //Initialise la couleur à blanc
+	glLineWidth(point_size); 
+	glPointSize(point_size); 
 
 	/* Titre de la fenêtre */
 	SDL_WM_SetCaption("Photoshop assez moyen", NULL);
@@ -158,109 +86,37 @@ int main(int argc, char** argv) {
 		/* Récupération du temps au début de la boucle */
 		Uint32 startTime = SDL_GetTicks();
 		
-		/* Echange du front et du back buffer : mise à jour de la fenêtre */
-		// SDL_GL_SwapBuffers();
-
-		if (mode == 1) {
-			displayPalette();
+		if (mode == 0) {
+			drawPrimitives(primitives); //On dessine les primitives
+		} else {
+			displayPalette(); //On affiche les couleurs pour la sélection
 		}
 
+		/* Echange du front et du back buffer : mise à jour de la fenêtre */
+		SDL_GL_SwapBuffers();
 		
 		/* Boucle traitant les evenements */
 		SDL_Event e;
 		while(SDL_PollEvent(&e)) {
 
-			/* L'utilisateur ferme la fenêtre : */
+			/* L'utilisateur ferme la fenêtre */
 			if(e.type == SDL_QUIT) {
 				loop = 0;
 				break;
 			}
 
-			/* Quelques exemples de traitement d'evenements : */
+			/* Traitement d'evenements  */
 			switch(e.type) {
 
 				/* Clic souris */
 				case SDL_MOUSEBUTTONDOWN:
-					printf("clic en (%d, %d)\n", e.button.x, e.button.y);
 					switch (mode) {
-						case 0:
-							printf("Couleurs avant dessin : %d, %d, %d \n", r, g, b);
-							glColor3ub(r, g, b);
-							if (primitive == 0) {
-								printf("DESSIN DE POINT\n");
-								x1 = -1 + 2. * e.button.x / WINDOW_WIDTH;
-								y1 = -(-1 + 2. * e.button.y / WINDOW_HEIGHT);
-								glBegin(GL_POINTS);
-									glVertex2f(x1, y1);
-								glEnd();
-								addPointToList(allocPoint(x1, y1, r, g, b), &list);
-								x1 = 0;
-								y1 = 0;
-							} else if (primitive == 1) {
-								printf("DESSIN DE LIGNE\n");
-								if (!x1 || !y1) {
-									x1 = -1 + 2. * e.button.x / WINDOW_WIDTH;
-									y1 = -(-1 + 2. * e.button.y / WINDOW_HEIGHT);
-								} else if (x1 && y1 && (!x2 || !y2)) {
-									x2 = -1 + 2. * e.button.x / WINDOW_WIDTH;
-									y2 = -(-1 + 2. * e.button.y / WINDOW_HEIGHT);
-								}
-								glBegin(GL_POINTS);
-									glVertex2f(x1, y1);
-								glEnd();
-								if (x1 && y1 && x2 && y2) {
-									glBegin(GL_LINES);
-										glVertex2f(x1, y1);
-										glVertex2f(x2, y2);
-									glEnd();
-									x1 = 0;
-									y1 = 0;
-									x2 = 0;
-									y2 = 0;
-								} else {
-									printf("Cliquez à nouveau.\n");
-								}
-							} else if (primitive == 2) {
-								printf("DESSIN DE LIGNE\n");
-								if (!x1 || !y1) {
-									x1 = -1 + 2. * e.button.x / WINDOW_WIDTH;
-									y1 = -(-1 + 2. * e.button.y / WINDOW_HEIGHT);
-								} else if (x1 && y1 && (!x2 || !y2)) {
-									x2 = -1 + 2. * e.button.x / WINDOW_WIDTH;
-									y2 = -(-1 + 2. * e.button.y / WINDOW_HEIGHT);
-								} else if (x1 && y1 && x2 && y2 && (!x3 || !y3)) {
-									x3 = -1 + 2. * e.button.x / WINDOW_WIDTH;
-									y3 = -(-1 + 2. * e.button.y / WINDOW_HEIGHT);
-								}
-								glBegin(GL_POINTS);
-									glVertex2f(x1, y1);
-								glEnd();
-								if (x2 && y2)
-								{
-									glBegin(GL_LINES);
-										glVertex2f(x1, y1);
-										glVertex2f(x2, y2);
-									glEnd();
-								}
-								if (x1 && y1 && x2 && y2 && x3 && y3) {
-									glBegin(GL_TRIANGLES);
-										glVertex2f(x1, y1);
-										glVertex2f(x2, y2);
-										glVertex2f(x3, y3);
-									glEnd();
-									x1 = 0;
-									y1 = 0;
-									x2 = 0;
-									y2 = 0;
-									x3 = 0;
-									y3 = 0;
-								} else {
-									printf("Cliquez à nouveau.\n");
-								}
-							}
+						case 0:	//Mode dessin : Ajout d'un point
+							x = -1 + 2. * e.button.x / WINDOW_WIDTH;
+							y = -(-1 + 2. * e.button.y / WINDOW_HEIGHT);
+							addPointToList(allocPoint(x, y, r, g, b), &primitives->points);
 							break;
-						case 1:
-							printf("Sélection de couleur\n");
+						case 1: //Mode palette : Sélection de couleur 
 							selectColor(e.button.x, &r, &g, &b);
 							break;
 						default:
@@ -270,19 +126,18 @@ int main(int argc, char** argv) {
 
 				/* Touche clavier appuyée */
 				case SDL_KEYDOWN:
-					printf("touche pressée (code = %d)\n", e.key.keysym.sym);
 					switch (e.key.keysym.sym) {
 						case SDLK_SPACE:
 							mode = 1;
 							break;
 						case SDLK_p:
-							primitive = 0;
+							addPrimitive(allocPrimitive(GL_POINTS), &primitives);
 							break;
 						case SDLK_l:
-							primitive = 1;
+							addPrimitive(allocPrimitive(GL_LINES), &primitives);
 							break;
 						case SDLK_t:
-							primitive = 2;
+							addPrimitive(allocPrimitive(GL_TRIANGLES), &primitives);
 							break;
 						case SDLK_q:
 							loop = 0;
@@ -294,12 +149,10 @@ int main(int argc, char** argv) {
 
 				/* Touche clavier relachée */
 				case SDL_KEYUP:
-					printf("touche relachée (code = %d)\n", e.key.keysym.sym);
 					switch (e.key.keysym.sym) {
 						case SDLK_SPACE:
 							mode = 0;
 							glClear(GL_COLOR_BUFFER_BIT);
-							drawPoints(list);
 						default:
 							break;
 					}
@@ -315,6 +168,7 @@ int main(int argc, char** argv) {
 				default:
 					break;
 			}
+
 		}
 
 		SDL_GL_SwapBuffers();
@@ -329,8 +183,139 @@ int main(int argc, char** argv) {
 
 	}
 
+	deletePrimitive(&primitives);
+
 	/* Liberation des ressources associées à la SDL */ 
 	SDL_Quit();
 
 	return EXIT_SUCCESS;
+}
+
+
+Point* allocPoint(float x, float y, unsigned char r, unsigned char g, unsigned char b) {
+	Point* point;
+	point = malloc(sizeof(Point));
+	if (point == NULL)
+	{
+		exit(EXIT_FAILURE);
+	}
+	point->x = x;
+	point->y = y;
+	point->r = r;
+	point->g = g;
+	point->b = b;
+	point->next = NULL;
+	return point;
+}
+
+Primitive* allocPrimitive(GLenum primitiveType) {
+	Primitive* primitive;
+	primitive = malloc(sizeof(Primitive));
+	if (primitive == NULL)
+	{
+		exit(EXIT_FAILURE);
+	}
+	primitive->primitiveType = primitiveType;
+	primitive->points = NULL;
+	primitive->next = NULL;
+	return primitive;
+}
+
+void addPointToList(Point* point, PointList* list) {
+	PointList* tmp_list;
+	tmp_list = malloc(sizeof(PointList));
+	if (tmp_list) {
+		tmp_list = list;
+		if (*tmp_list == NULL) {
+			*tmp_list = point;
+		} else {
+			point->next = *tmp_list;
+			*tmp_list = point;
+		}
+		*list = *tmp_list;
+	} else {
+		exit(EXIT_FAILURE);
+	}
+	
+}
+
+void drawPoints(PointList list) {
+	while (list) {
+		glColor3ub(list->r, list->g, list->b);
+		glVertex2f(list->x, list->y);
+		list = list->next;
+	}
+}
+
+void deletePoints(PointList* list) {
+	while (*list) {
+		PointList next = (*list)->next;
+		free(*list);
+		*list = next;
+	}
+}
+
+void addPrimitive(Primitive* primitive, PrimitiveList* list) {
+	PrimitiveList tmp_list;
+	tmp_list = malloc(sizeof(PrimitiveList));
+	if (tmp_list) {
+		tmp_list = *list;
+	}
+	if (*list == NULL) {
+		*list = primitive;
+	} else {
+		primitive->next = *list;
+		*list = primitive;
+	}
+}
+
+void drawPrimitives(PrimitiveList list) {
+	while (list) {
+		glBegin(list->primitiveType);
+			drawPoints(list->points);
+		glEnd();
+		list = list->next;
+	}
+}
+
+void deletePrimitive(PrimitiveList* list) {
+	while (*list) {
+		deletePoints(&((*list)->points));
+		PrimitiveList next = (*list)->next;
+		free(*list);
+		*list = next;
+	}
+}
+
+void resize() {
+	SDL_SetVideoMode(WINDOW_WIDTH, WINDOW_HEIGHT, BIT_PER_PIXEL, SDL_OPENGL | SDL_RESIZABLE | SDL_GL_DOUBLEBUFFER);
+	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D(-1., 1., -1., 1.);
+}
+
+void displayPalette() {
+	int nb_colors, i;
+	float color_width;
+	nb_colors = 8;
+	color_width = 2 * WINDOW_WIDTH / (float)nb_colors * 100 / WINDOW_WIDTH / 100 ;
+	glBegin(GL_QUADS);
+		for(i = 0; i < nb_colors; ++i) {
+			glColor3ub((255 / nb_colors) * i, 0, 255);
+			glVertex2f(-1 + i * color_width, -1);
+			glVertex2f(-1 + (i + 1) * color_width, -1);
+			glVertex2f(-1 + (i + 1) * color_width, 1);
+			glVertex2f(-1 + i * color_width, 1);
+		}
+	glEnd();
+}
+
+void selectColor(int x, int *r, int *g, int *b) {
+	int nb_colors, num_bande;
+	nb_colors = 8;
+	num_bande = x / (WINDOW_WIDTH / nb_colors);
+	*r = (255 / nb_colors) * num_bande;
+	*g = 0;
+	*b = 255;
 }
