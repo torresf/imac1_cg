@@ -3,6 +3,9 @@
 #include <GL/glu.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
+
+#define PI 3.1415926535
 
 /* Dimensions de la fenêtre */
 static unsigned int WINDOW_WIDTH = 400;
@@ -40,12 +43,29 @@ void addPrimitive(Primitive* primitive, PrimitiveList* list);
 void drawPrimitives(PrimitiveList list);
 void deletePrimitive(PrimitiveList* list);
 
+
+void drawLandmark(int full) {
+	// Axe des abscisses rouge
+	glBegin(GL_LINES);
+		glColor3ub(255, 0, 0);
+		glVertex2f(-1, 0);
+		glVertex2f( 1, 0);
+	glEnd();
+	// Axe des ordonnées vert
+	glBegin(GL_LINES);
+		glColor3ub(0, 255, 0);
+		glVertex2f(0, -1);
+		glVertex2f(0,  1);
+	glEnd();
+}
+
 /* Fonctions dessins objets canoniques */
-void drawSquare() {
+void drawSquare(int full) {
 	int r, g, b;
 	r = g = b = 255;
+	GLenum primitiveType = full ? GL_QUADS : GL_LINE_LOOP;
 
-	glBegin(GL_LINE_LOOP);
+	glBegin(primitiveType);
 		glColor3ub(r, g, b);
 		glVertex2f(-.5, -.5);
 		glVertex2f( .5, -.5);
@@ -54,29 +74,19 @@ void drawSquare() {
 	glEnd();
 }
 
-void drawLandmark() {
-	// Axe des abscisses rouge
-	glBegin(GL_LINES);
-		glColor3ub(255, 0, 0);
-		glVertex2f(-.5, 0);
-		glVertex2f( .5, 0);
-	glEnd();
-	// Axe des ordonnées vert
-	glBegin(GL_LINES);
-		glColor3ub(0, 255, 0);
-		glVertex2f(0, -.5);
-		glVertex2f(0,  .5);
-	glEnd();
-}
-
 /* Fonctions dessins objets canoniques */
-void drawCircle() {
-	int nbPoints = 16;
+void drawCircle(int full) {
+	int nbPoints = 64;
 	int i;
-	glBegin(GL_LINE_LOOP);
+	float teta = 0;
+	GLenum primitiveType = full ? GL_POLYGON : GL_LINE_LOOP;
+
+	glColor3ub(255, 0, 120);
+	glBegin(primitiveType);
 		for (i = 0; i < nbPoints; ++i)
 		{
-			
+			teta = i * (2 * PI) / nbPoints;
+			glVertex2f(cos(teta)/2, sin(teta)/2);
 		}
 	glEnd();
 }
@@ -132,9 +142,9 @@ int main(int argc, char** argv) {
 		glClear(GL_COLOR_BUFFER_BIT);
 		
 		if (mode == 0) {
-			// drawSquare();
-			drawLandmark();
-			drawCircle();
+			drawSquare(1);
+			drawLandmark(0);
+			drawCircle(0);
 			drawPrimitives(primitives); //On dessine les primitives
 		} else {
 			displayPalette(); //On affiche les couleurs pour la sélection
