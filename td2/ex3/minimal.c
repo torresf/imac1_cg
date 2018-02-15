@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 
 #define PI 3.1415926535
 
@@ -103,6 +104,11 @@ void drawCircle(int full) {
 	glEnd();
 }
 
+int random_0_1(void){
+    srand(time(NULL));
+    return (rand()&1);
+}
+
 void resize(); //Redimensionne le viewport et rafraichit le repère
 void displayPalette(); //Affiche les couleurs de la palette
 void selectColor(int x, int *r, int *g, int *b); // Modifie la couleur actuelle en fonction du clic
@@ -115,6 +121,7 @@ int main(int argc, char** argv) {
 	int r, g, b; // Valeurs rgb de la couleur courante
 	float point_size; //Largeur du point
 	int right_click;
+	float rand_x, rand_y;
 
 	PrimitiveList primitives = NULL;
 	mode = 0;
@@ -122,6 +129,7 @@ int main(int argc, char** argv) {
 	angle = 0;
 	r = g = b = 255; //Couleur blanche
 	x = y = 0;
+	rand_x = rand_y = 0;
 	point_size = 2.0f;
 
 	addPrimitive(allocPrimitive(GL_LINE_STRIP), &primitives);
@@ -190,6 +198,18 @@ int main(int argc, char** argv) {
 			glRotatef(-angle, 0.0, 0.0, 1.0);
 			glTranslatef(-x,-y,0);
 
+			//Dessin du cercle bleu
+			rand_x = rand()%2 ? rand_x + .2 : rand_x - .2;
+			rand_y = rand()%2 ? rand_y + .2 : rand_y - .2;
+			if (rand_x < -4) rand_x = -4;
+			if (rand_x > 4) rand_x = 4;
+			if (rand_y < -3) rand_y = -3;
+			if (rand_y > 3) rand_y = 3;
+			glColor3ub(0, 0, 255);
+			glTranslatef(rand_x, rand_y, 0);
+			drawCircle(1);
+			glTranslatef(-rand_x, -rand_y, 0);
+
 			// drawPrimitives(primitives); //On dessine les primitives
 		} else {
 			displayPalette(); //On affiche les couleurs pour la sélection
@@ -226,11 +246,12 @@ int main(int argc, char** argv) {
 							{
 								right_click = 1;
 								primitives->primitiveType = GL_LINE_LOOP;
+							} else {
+								x = -4 + 8. * e.button.x / WINDOW_WIDTH;
+								y = -(-3 + 6. * e.button.y / WINDOW_HEIGHT);
+								printf("x, y = %f, %f\n", x, y);
+								addPointToList(allocPoint(x, y, r, g, b), &primitives->points);
 							}
-							x = -4 + 8. * e.button.x / WINDOW_WIDTH;
-							y = -(-3 + 6. * e.button.y / WINDOW_HEIGHT);
-							printf("x, y = %f, %f\n", x, y);
-							addPointToList(allocPoint(x, y, r, g, b), &primitives->points);
 							break;
 						case 1: //Mode palette : Sélection de couleur 
 							selectColor(e.button.x, &r, &g, &b);
