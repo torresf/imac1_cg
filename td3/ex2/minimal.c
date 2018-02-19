@@ -142,6 +142,9 @@ void drawRoundedSquare() {
 }
 
 GLuint createFirstArmIDList() {
+	GLuint id = glGenLists(1);
+	glNewList(id, GL_COMPILE);
+
 	glPushMatrix();
 		glScalef(4, 4, 1);
 		drawCircle(1);
@@ -159,10 +162,15 @@ GLuint createFirstArmIDList() {
 		glVertex2f(6, -1);
 		glVertex2f(6, 1);
 	glEnd();
-	return glGenLists(1);
+
+	glEndList();
+	return id;
 }
 
 GLuint createSecondArmIDList() {
+	GLuint id = glGenLists(1);
+	glNewList(id, GL_COMPILE);
+
 	glColor3ub(180, 180, 180);
 	glPushMatrix();
 		drawRoundedSquare();
@@ -176,10 +184,15 @@ GLuint createSecondArmIDList() {
 		glScalef(4.6, .6, 1);
 		drawSquare(1);
 	glPopMatrix();
-	return glGenLists(2);
+
+	glEndList();
+	return id;
 }
 
 GLuint createThirdArmIDList() {
+	GLuint id = glGenLists(1);
+	glNewList(id, GL_COMPILE);
+
 	glColor3ub(255, 180, 100);
 	glPushMatrix();
 		glScalef(.6, .6, 1);
@@ -195,7 +208,9 @@ GLuint createThirdArmIDList() {
 		glScalef(.8, .8, 1);
 		drawCircle(1);
 	glPopMatrix();
-	return glGenLists(3);
+
+	glEndList();
+	return id;
 }
 
 void resize(); //Redimensionne le viewport et rafraichit le repère
@@ -253,19 +268,19 @@ int main(int argc, char** argv) {
 		glColor3ub(255, 255, 255);
 		glPushMatrix();
 			glRotatef(alpha, 0, 0, 1);
-			drawFirstArm();
+			glCallList(createFirstArmIDList());
 
 			glTranslatef(6, 0, 0);
 			glRotatef(beta, 0, 0, 1);
-			drawSecondArm();
+			glCallList(createSecondArmIDList());
 
 			glTranslatef(4, 0, 0);
 			glRotatef(gamma, 0, 0, 1);
-			drawThirdArm();
+			glCallList(createThirdArmIDList());
 			glRotatef(gamma*2, 0, 0, 1);
-			drawThirdArm();
+			glCallList(createThirdArmIDList());
 			glRotatef(gamma/2, 0, 0, 1);
-			drawThirdArm();
+			glCallList(createThirdArmIDList());
 		glPopMatrix();
 
 		alpha++;
