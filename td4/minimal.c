@@ -37,13 +37,37 @@ int main(int argc, char** argv) {
     resizeViewport();
 
     // TODO: Chargement et traitement de la texture
+    SDL_Surface* image;
+    image = IMG_Load(filename);
+    if (image == NULL)
+    {
+        printf("Erreur de chargement de l'image.\n");
+    }
 
-    // ...
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGB,
+        image->w,
+        image->h,
+        0,
+        GL_RGB,
+        GL_UNSIGNED_BYTE,
+        image->pixels);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
 
     // TODO: Libération des données CPU
-    // ...
-
-    /* Boucle de dessin (à décommenter pour l'exercice 3)
+    SDL_FreeSurface(image);
+    
+    //Boucle de dessin (à décommenter pour l'exercice 3)
     int loop = 1;
     glClearColor(0.1, 0.1, 0.1 ,1.0);
     while(loop) {
@@ -54,9 +78,29 @@ int main(int argc, char** argv) {
 
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // ...
+        glEnable(GL_TEXTURE_2D); // On précise qu’on veut activer la fonctionnalité de texturing
+        glBindTexture(GL_TEXTURE_2D, textureID); // On bind la texture pour pouvoir l’utiliser
 
-        // Fin du code de dessin
+        glPushMatrix();
+            glTranslatef(-.5, -.5, 0); // Translate pour vérifier que la texture suit bien le quad
+            glScalef(.7, .7, 1); // Translate pour vérifier que la texture suit bien le quad
+
+            glBegin(GL_QUADS);
+                glTexCoord2f(0,0);
+                glVertex2f(-.5,.5);
+                glTexCoord2f(1,0);
+                glVertex2f(.5,.5);
+                glTexCoord2f(1,1);
+                glVertex2f(.5,-.5);
+                glTexCoord2f(0,1);
+                glVertex2f(-.5,-.5);
+            glEnd();
+        
+        glPopMatrix();
+
+        // Fin du code de dessin, on désactive la texture
+        glDisable(GL_TEXTURE_2D); // On désactive le sampling de texture
+        glBindTexture(GL_TEXTURE_2D, 0); // On débind la texture
 
         SDL_Event e;
         while(SDL_PollEvent(&e)) {
@@ -83,10 +127,10 @@ int main(int argc, char** argv) {
             SDL_Delay(FRAMERATE_MILLISECONDS - elapsedTime);
         }
     }
-    */
+    //Fin de la boucle de dessin / rendu
 
     // TODO: Libération des données GPU
-    // ...
+    glDeleteTextures(1, &textureID);
 
     // Liberation des ressources associées à la SDL
     SDL_Quit();
