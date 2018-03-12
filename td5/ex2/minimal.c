@@ -8,6 +8,8 @@
 
 #define PI 3.1415926535
 #define NB_POINTS 64
+#define WIDTH 8
+#define HEIGHT 6
 
 /* Dimensions de la fenêtre */
 static unsigned int WINDOW_WIDTH = 800;
@@ -61,14 +63,28 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	resize();
-
-	glScalef(.1, .1, 1);
-	glColor3ub(255, 255, 255); //Initialise la couleur à blanc
-	
-
 	/* Titre de la fenêtre */
 	SDL_WM_SetCaption("Système Solaire", NULL);
+
+	resize();
+
+	float scale_x, scale_y, translate_x, translate_y;
+	scale_x = 1;
+	scale_y = 1;
+	translate_x = 0;
+	translate_y = 0;
+	glColor3ub(255, 255, 255); //Initialise la couleur à blanc
+
+	time_t rawtime;
+	struct tm * timeinfo;
+
+	time (&rawtime);
+	timeinfo = localtime (&rawtime);
+	int secondes = timeinfo->tm_sec;
+	int old_secondes = timeinfo->tm_sec;
+	float i = 1;
+	float j = 1;
+	float k = 1;
 
 	/* Boucle d'affichage */
 	int loop = 1;
@@ -78,79 +94,109 @@ int main(int argc, char** argv) {
 		Uint32 startTime = SDL_GetTicks();
 		
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		time (&rawtime);
+		timeinfo = localtime (&rawtime);
+		secondes = timeinfo->tm_sec;
 		
-		// Dessin du soleil
 		glPushMatrix();
-			glColor3ub(255, 255, 0);
-			glScalef(1.392, 1.392, 1);
-			drawCircle(1);
+			glScalef(scale_x, scale_y, 1);
+			glTranslatef(translate_x, translate_y, 0);
+		
+			// Dessin du soleil
+			glPushMatrix();
+				glColor3ub(255, 255, 0);
+				glScalef(1.392, 1.392, 1);
+				drawCircle(1);
+			glPopMatrix();
+
+			// Dessin de Mercure
+			glPushMatrix();
+				glColor3ub(120, 120, 120);
+				if (old_secondes == secondes) {
+					i += (float) 1/30;
+				} else {
+					i = 1;
+					old_secondes = secondes;
+				}
+				glRotatef((360 / 60)*(secondes+i), 0, 0, 1);
+					
+				glTranslatef(1, 0, 0);
+				glScalef(.2, .2, 1);
+				drawCircle(1);
+			glPopMatrix();
+
+			// // Dessin de Venus
+			// glPushMatrix();
+			// 	glColor3ub(190, 190, 190);
+			// 	if (old_secondes == secondes) {
+			// 		j += (float)1/60;
+			// 	} else {
+			// 		j = 1;
+			// 		old_secondes = secondes;
+			// 	}
+			// 	glRotatef((360 / 60)*(secondes+j), 0, 0, 1);
+			// 	glTranslatef(1.5, 0, 0);
+			// 	glScalef(.15, .15, 1);
+			// 	drawCircle(1);
+			// glPopMatrix();
+
+			// Dessin de la Terre
+			glPushMatrix();
+				glColor3ub(20, 40, 250);
+				if (old_secondes == secondes) {
+					k += (float) 1/30;
+				} else {
+					k = 1;
+					old_secondes = secondes;
+				}
+				glRotatef((360 / 60)*(secondes+k), 0, 0, 1);
+				glTranslatef(2, 0, 0);
+				glScalef(.2, .2, 1);
+				drawCircle(1);
+			glPopMatrix();
+			
+			// Dessin de Mars
+			// glPushMatrix();
+			// 	glColor3ub(200, 40, 40);
+			// 	glTranslatef(227.90, 0, 0);
+			// 	glScalef(.006794, .006794, 1);
+			// 	drawCircle(1);
+			// glPopMatrix();
+
+			// // Dessin de Jupiter
+			// glPushMatrix();
+			// 	glColor3ub(255, 255, 100);
+			// 	glTranslatef(778.34, 0, 0);
+			// 	glScalef(.1428, .1428, 1);
+			// 	drawCircle(1);
+			// glPopMatrix();
+
+			// // Dessin de Saturne
+			// glPushMatrix();
+			// 	glColor3ub(255, 255, 150);
+			// 	glTranslatef(1427, 0, 0);
+			// 	glScalef(.1206, .1206, 1);
+			// 	drawCircle(1);
+			// glPopMatrix();
+
+			// // Dessin de Uranus
+			// glPushMatrix();
+			// 	glColor3ub(50, 70, 255);
+			// 	glTranslatef(2869, 0, 0);
+			// 	glScalef(.0513, .0513, 1);
+			// 	drawCircle(1);
+			// glPopMatrix();
+
+			// // Dessin de Neptune
+			// glPushMatrix();
+			// 	glColor3ub(10, 20, 255);
+			// 	glTranslatef(4490, 0, 0);
+			// 	glScalef(.0491, .0491, 1);
+			// 	drawCircle(1);
+			// glPopMatrix();
+		
 		glPopMatrix();
-
-		// Dessin de Mercure
-		glPushMatrix();
-			glColor3ub(120, 120, 120);
-			glTranslatef(57.90, 0, 0);
-			glScalef(.004878, .004878, 1);
-			drawCircle(1);
-		glPopMatrix();
-
-		// Dessin de Venus
-		glPushMatrix();
-			glColor3ub(190, 190, 190);
-			glTranslatef(108.21, 0, 0);
-			glScalef(.0121, .0121, 1);
-			drawCircle(1);
-		glPopMatrix();
-
-		// Dessin de Earth
-		glPushMatrix();
-			glColor3ub(20, 40, 250);
-			glTranslatef(149.6, 0, 0);
-			glScalef(.012756, .012756, 1);
-			drawCircle(1);
-		glPopMatrix();
-
-		// Dessin de Mars
-		glPushMatrix();
-			glColor3ub(200, 40, 40);
-			glTranslatef(227.90, 0, 0);
-			glScalef(.006794, .006794, 1);
-			drawCircle(1);
-		glPopMatrix();
-
-		// Dessin de Jupiter
-		glPushMatrix();
-			glColor3ub(255, 255, 100);
-			glTranslatef(778.34, 0, 0);
-			glScalef(.1428, .1428, 1);
-			drawCircle(1);
-		glPopMatrix();
-
-		// Dessin de Saturne
-		glPushMatrix();
-			glColor3ub(255, 255, 150);
-			glTranslatef(1427, 0, 0);
-			glScalef(.1206, .1206, 1);
-			drawCircle(1);
-		glPopMatrix();
-
-		// Dessin de Uranus
-		glPushMatrix();
-			glColor3ub(50, 70, 255);
-			glTranslatef(2869, 0, 0);
-			glScalef(.0513, .0513, 1);
-			drawCircle(1);
-		glPopMatrix();
-
-		// Dessin de Neptune
-		glPushMatrix();
-			glColor3ub(10, 20, 255);
-			glTranslatef(4490, 0, 0);
-			glScalef(.0491, .0491, 1);
-			drawCircle(1);
-		glPopMatrix();
-
-
 
 
 		/* Echange du front et du back buffer : mise à jour de la fenêtre */
@@ -169,6 +215,17 @@ int main(int argc, char** argv) {
 			/* Traitement d'evenements  */
 			switch(e.type) {
 
+				case SDL_MOUSEBUTTONDOWN:
+					if (e.button.button == SDL_BUTTON_WHEELUP)
+					{
+						scale_x += .15;
+						scale_y += .15;
+					} else if (e.button.button == SDL_BUTTON_WHEELDOWN) {
+						scale_x -= .15;
+						scale_y -= .15;
+					}
+					break;
+
 				/* Touche clavier appuyée */
 				case SDL_KEYDOWN:
 					switch (e.key.keysym.sym) {
@@ -185,6 +242,19 @@ int main(int argc, char** argv) {
 					switch (e.key.keysym.sym) {
 						case SDLK_SPACE:
 							glClear(GL_COLOR_BUFFER_BIT);
+							break;
+						case SDLK_LEFT:
+							translate_x += .15;
+							break;
+						case SDLK_RIGHT:
+							translate_x -= .15;
+							break;
+						case SDLK_UP:
+							translate_y -= .15;
+							break;
+						case SDLK_DOWN:
+							translate_y += .15;
+							break;
 						default:
 							break;
 					}
@@ -226,5 +296,5 @@ void resize() {
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluOrtho2D(-4., 4., -3., 3.);
+	gluOrtho2D(-WIDTH/2., WIDTH/2., -HEIGHT/2., HEIGHT/2.);
 }

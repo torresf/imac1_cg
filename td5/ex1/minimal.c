@@ -69,7 +69,6 @@ int main(int argc, char** argv) {
 	time_t rawtime;
 	struct tm * timeinfo;
 	
-
 	/* Titre de la fenêtre */
 	SDL_WM_SetCaption("Photoshop assez moyen", NULL);
 
