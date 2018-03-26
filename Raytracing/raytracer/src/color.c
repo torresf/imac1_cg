@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "color.h"
 
 Color3f addColors(Color3f c1, Color3f c2) {

@@ -1,0 +1,22 @@
+P(x,y,z) = R + tV
+
+rayon = SQRT(x²+y²+z²)
+
+R(x,y,z) + V(x,y,z) = SQRT(x²+y²+z²) * rayon
+
+x² + y² + z² - r² = 0
+     |P|²    - r² = 0
+  |R + tV|²  - r² = 0
+
+(Rx+tVx)² + (Ry+tVy)² + (Rz+tVz)² - r² = 0
+
+(Rx² + 2RxtVx + t²Vx²) + (Ry² + 2RytVy + t²Vy²) + (Ry² + 2RytVy + t²Vy²) - r² = 0
+
+(Vx² + Vy² + Vz²)t² + (2RxVx + 2RyVy + 2RzVz)t + Rx² + Ry² + Rx² - r² = 0
+-> at² + bt + c = 0
+a = |V|² = 1 Si V est normalisé
+b = 2*|RV|
+c = |R|² - r²
+
+
+Calcul de delta, puis calcul des racines
