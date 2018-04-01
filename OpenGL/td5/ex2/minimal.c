@@ -19,7 +19,7 @@ static unsigned int WINDOW_HEIGHT = 600;
 static const unsigned int BIT_PER_PIXEL = 32;
 
 /* Nombre minimal de millisecondes separant le rendu de deux images */
-static const Uint32 FRAMERATE_MILLISECONDS = 1000 / 60;
+static const Uint32 FRAMERATE_MILLISECONDS = 1000 / 60.;
 
 /* Fonctions dessins objets canoniques */
 void drawSquare(int full) {
@@ -81,10 +81,12 @@ int main(int argc, char** argv) {
 	time (&rawtime);
 	timeinfo = localtime (&rawtime);
 	int secondes = timeinfo->tm_sec;
-	int old_secondes = timeinfo->tm_sec;
-	float i = 1;
-	float j = 1;
-	float k = 1;
+	int old_secondes_i = timeinfo->tm_sec;
+	int old_secondes_j = timeinfo->tm_sec;
+	int old_secondes_k = timeinfo->tm_sec;
+	float i = 0;
+	float j = 0;
+	float k = 0;
 
 	/* Boucle d'affichage */
 	int loop = 1;
@@ -113,44 +115,43 @@ int main(int argc, char** argv) {
 			// Dessin de Mercure
 			glPushMatrix();
 				glColor3ub(120, 120, 120);
-				if (old_secondes == secondes) {
-					i += (float) 1/30;
+				if (old_secondes_i == secondes) {
+					i += (float) 1/40;
 				} else {
-					i = 1;
-					old_secondes = secondes;
+					i = 0;
+					old_secondes_i = secondes;
 				}
 				glRotatef((360 / 60)*(secondes+i), 0, 0, 1);
-					
 				glTranslatef(1, 0, 0);
 				glScalef(.2, .2, 1);
 				drawCircle(1);
 			glPopMatrix();
 
-			// // Dessin de Venus
-			// glPushMatrix();
-			// 	glColor3ub(190, 190, 190);
-			// 	if (old_secondes == secondes) {
-			// 		j += (float)1/60;
-			// 	} else {
-			// 		j = 1;
-			// 		old_secondes = secondes;
-			// 	}
-			// 	glRotatef((360 / 60)*(secondes+j), 0, 0, 1);
-			// 	glTranslatef(1.5, 0, 0);
-			// 	glScalef(.15, .15, 1);
-			// 	drawCircle(1);
-			// glPopMatrix();
+			// Dessin de Venus
+			glPushMatrix();
+				glColor3ub(190, 190, 190);
+				if (old_secondes_j == secondes) {
+					j += (float) 1/40;
+				} else {
+					j = 0;
+					old_secondes_j = secondes;
+				}
+				glRotatef(3*((360 / 60)*(secondes+j)), 0, 0, 1);
+				glTranslatef(1.5, 0, 0);
+				glScalef(.15, .15, 1);
+				drawCircle(1);
+			glPopMatrix();
 
 			// Dessin de la Terre
 			glPushMatrix();
 				glColor3ub(20, 40, 250);
-				if (old_secondes == secondes) {
-					k += (float) 1/30;
+				if (old_secondes_k == secondes) {
+					k += (float) 1/40;
 				} else {
-					k = 1;
-					old_secondes = secondes;
+					k = 0;
+					old_secondes_k = secondes;
 				}
-				glRotatef((360 / 60)*(secondes+k), 0, 0, 1);
+				glRotatef(6*((360 / 60)*(secondes+k)), 0, 0, 1);
 				glTranslatef(2, 0, 0);
 				glScalef(.2, .2, 1);
 				drawCircle(1);
